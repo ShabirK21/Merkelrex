@@ -49,74 +49,39 @@ bool AdvisorBot::checkIfValid(std::string currencyPair, std::string orderBookTyp
     return false;
 }
 
-void AdvisorBot::predictMarketPrice(std::string MaxOrMin, std::string currencyPair, std::string orderBookType) {
-    history.push_back("predict " + MaxOrMin + " " + currencyPair + " " + orderBookType);
+std::vector<OrderBookEntry> AdvisorBot::generateEntry(std::string currencyPair, std::string orderBookType) {
     OrderBookType OBT = OrderBookEntry::stringToOBT(orderBookType);
-    std::vector <OrderBookEntry> entry = OB.getOrders(OBT, currencyPair, OB.getEarliestTime());
-    const int size = entry.size();
-    int l_size = 10;
-    double sum = 0;
-    double mAvg = 0;
-    std::vector<double> prices;
-
-    for (int i = 0; i <= (size - l_size); i++) {
-        sum = 0;
-
-        for (int j = i; j < (i + l_size); j++) {
-            sum += entry[j].price;
-        }
-
-        mAvg = sum / l_size;
-        prices.push_back(mAvg);
-
-    }
-    if (MaxOrMin == "max") {
-        double max = *std::max_element(prices.begin(), prices.end());
-        mAvg = max;
-    } else if (MaxOrMin == "min") {
-        double min = *std::min_element(prices.begin(), prices.end());
-        mAvg = min;
-    }
-    std::string output = "The predicted " + MaxOrMin + " price for " + currencyPair + " in the next 10 timestamps is " + std::to_string(mAvg);
-    AdvisorBotFormatting(output);
-    history.push_back(output + " at " + currentTime);
+    std::vector<OrderBookEntry> entries = OB.getOrders(OBT, currencyPair, currentTime);
+    return entries;
 }
 
-std::string AdvisorBot::statistics(std::string orderBookType, std::string currencyPair, std::string command, int timestamps) {
-    history.push_back(command + " " + orderBookType + " " + currencyPair);
-    std::string output;
-    OrderBookType OBT = OrderBookEntry::stringToOBT(orderBookType);
-    std::vector <OrderBookEntry> entry = OB.getOrders(OBT, currencyPair, OB.getEarliestTime());
+double AdvisorBot::EMA(std::string MaxOrMin, std::vector <OrderBookEntry> entries) {
+    int period = 10;
+    double currentPrice;
+    double previousPrice;
+    std::vector<double> EMA;
+    double constant = 2 / (period + 1);
+    double finalEMA;
 
-    if (command == "min") {
-        output = "The " + command + " " + orderBookType + " for " + currencyPair + " is " +
-                 std::to_string(OrderBook::getLowPrice(entry));
-        history.push_back(output + " at " + currentTime);
-    }
-    if (command == "max") {
-        output = "The " + command + " " + orderBookType + " for " + currencyPair + " is " +
-                 std::to_string(OrderBook::getHighPrice(entry));
-        history.push_back(output + " at " + currentTime);
-    }
-
-    if (command == "std") {
-        output = "The " + command + " " + orderBookType + " for " + currencyPair + " is " +
-                 std::to_string(OrderBook::getStdDev(entry));
-        history.push_back(output + " at " + currentTime);
-    }
-
-    if (command == "avg") {
-        if (timestamps <= entry.size()) {
-            output = "The " + command + " " + orderBookType + " for " + currencyPair + " over the last "
-                     + std::to_string(timestamps) + " timestamps is " +
-                     std::to_string(OrderBook::getAverage(entry, timestamps));
-            history.push_back(output + " at " + currentTime);
-        } else {
-            AdvisorBotFormatting("The number of timestamps entered is greater than the number of timestamps available");
+    for(int i = 0; i < period; i++){
+        if (i == 0){
+            currentPrice = entries[i].price;
+        }
+        else{
+            previousPrice = currentPrice;
+            currentPrice = entries[i].price;
+            EMA.push_back((constant*currentPrice)+((1-constant)*previousPrice));
         }
     }
+    if (MaxOrMin == "max") {
+        double max = *std::max_element(EMA.begin(), EMA.end());
+        finalEMA = max;
+    } else if (MaxOrMin == "min") {
+        double min = *std::min_element(EMA.begin(), EMA.end());
+        finalEMA = min;
+    }
 
-    return output;
+    return finalEMA;
 }
 
 bool AdvisorBot::checkIfInt(std::string input) {
@@ -130,6 +95,7 @@ bool AdvisorBot::checkIfInt(std::string input) {
 }
 
 void AdvisorBot::processUserInput(std::vector <std::string> &userInput) {
+    std::string output;
     if (userInput.size() == 1) {
         std::string command = userInput[0];
         // output available commands
@@ -164,7 +130,8 @@ void AdvisorBot::processUserInput(std::vector <std::string> &userInput) {
                 AdvisorBotFormatting(h);
             }
             AdvisorBotFormatting("====================================");
-        } else {
+        }
+        else {
             AdvisorBotFormatting("Invalid input, please enter a valid command");
         }
 
@@ -226,41 +193,56 @@ void AdvisorBot::processUserInput(std::vector <std::string> &userInput) {
         // minimum
         if (command == "min") {
             if (checkIfValid(currencyPair, orderBookType)) {
-                AdvisorBotFormatting(statistics(orderBookType, currencyPair, command));
+               std::vector<OrderBookEntry> entries = generateEntry(currencyPair, orderBookType);
+               double min = OrderBook::getLowPrice(entries);
+                output = "The " + command + " " + orderBookType + " for " +
+                        currencyPair + " is " + std::to_string(min);
+               AdvisorBotFormatting(output);
             }
         } // maximum
         else if (command == "max") {
             if (checkIfValid(currencyPair, orderBookType)) {
-                AdvisorBotFormatting(statistics(orderBookType, currencyPair, command));
+                std::vector<OrderBookEntry> entries = generateEntry(currencyPair, orderBookType);
+                double max = OrderBook::getHighPrice(entries);
+                output = "The " + command + " " + orderBookType + " for " +
+                        currencyPair + " is " + std::to_string(max);
+                AdvisorBotFormatting(output);
             }
         } // standard deviation
         else if (command == "std") {
             if (checkIfValid(currencyPair, orderBookType)) {
-                AdvisorBotFormatting(statistics(orderBookType, currencyPair, command));
+                std::vector<OrderBookEntry> entries = generateEntry(currencyPair, orderBookType);
+                double std = OrderBook::getStdDev(entries);
+                output = "The " + command + " " + orderBookType + " for " +
+                        currencyPair + " is " + std::to_string(std);
+                AdvisorBotFormatting(output);
             }
         } else {
             AdvisorBotFormatting("Invalid input, please enter a valid command");
         }
 
-    } else if (userInput.size() > 3) {
+    } else if (userInput.size() == 4) {
         std::string command = userInput[0];
-        std::string currencyPair = userInput[1];
-        std::string orderBookType = userInput[2];
-        std::string timestamps = userInput[3];
-
-        // convert prodcut to uppercase
-        for (int i = 0; i < currencyPair.length(); i++) {
-            currencyPair[i] = toupper(currencyPair[i]);
-        }
 
         // average
         if (command == "avg") {
+            std::string currencyPair = userInput[1];
+            std::string orderBookType = userInput[2];
+            std::string timestamps = userInput[3];
+            // convert product to uppercase
+            for (int i = 0; i < currencyPair.length(); i++) {
+                currencyPair[i] = toupper(currencyPair[i]);
+            }
             if (checkIfValid(currencyPair, orderBookType)) {
                 if (checkIfInt(timestamps)) {
-                    AdvisorBotFormatting(statistics(orderBookType, currencyPair, command, std::stoi(timestamps)));
+                    std::vector<OrderBookEntry> entries = generateEntry(currencyPair, orderBookType);
+                    double averageVal = OrderBook::getAverage(entries, std::stoi(timestamps));
+                    output = "The " + command + " " + orderBookType + " for " + currencyPair + " over the last "
+                             + timestamps + " timestamps is " + std::to_string(averageVal);
+                    AdvisorBotFormatting(output);
                 }
             }
-        }// predict next price using simple moving average
+        }// predict using exponential moving average
         else if (command == "predict") {
             std::string MaxOrMin = userInput[1];
             std::string currencyPair = userInput[2];
@@ -271,7 +253,13 @@ void AdvisorBot::processUserInput(std::vector <std::string> &userInput) {
             }
             if (MaxOrMin == "max" || MaxOrMin == "min") {
                 if (checkIfValid(currencyPair, orderBookType)) {
-                    predictMarketPrice(MaxOrMin, currencyPair, orderBookType);
+                    history.push_back(command + " " + MaxOrMin + " " + currencyPair + " " + orderBookType);
+                    std::vector<OrderBookEntry> entries = generateEntry(currencyPair, orderBookType);
+                    double prediction = EMA(MaxOrMin, entries);
+                    output = "The predicted " + MaxOrMin + orderBookType + " for " +
+                            currencyPair + " in the next 10 timestamps is " + std::to_string(prediction);
+                    AdvisorBotFormatting(output);
+                    history.push_back(output);
                 }
             } else {
                 AdvisorBotFormatting("Please enter either max or min");
