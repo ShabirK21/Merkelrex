@@ -15,34 +15,30 @@ public:
     void init();
 
 private:
-
+    /** Captures and returns user input*/
     std::string getUserInput();
-
+    /** Prints start menu*/
     void startScreen();
-
-    void processUserInput(std::vector <std::string> &userInput);
-
-    void AdvisorBotFormatting(std::string advisorBotOutput);
-
-    bool checkIfValid(std::string currencyPair, std::string orderBookType);
-
-    double EMA(std::string MaxOrMin, std::vector <OrderBookEntry> entries);
-
-    bool checkIfInt(std::string input);
-
-    std::vector<OrderBookEntry> generateEntry (std::string orderBookType, std::string currencyPair);
+    /** Processes user input and decides command to executes*/
+    void processUserInput(const std::vector <std::string> &userInput);
+    /** Formats system output*/
+    void AdvisorBotFormatting(const std::string &advisorBotOutput);
+    /** Checks if user input is valid*/
+    bool checkIfValid(const std::string &currencyPair, const std::string &orderBookType);
+    /** Exponential moving average to predict price*/
+    double EMA(const std::string &MaxOrMin, const std::vector <OrderBookEntry> &entries);
+    /** Checks if user input is valid*/
+    bool checkIfInt(const std::string &input);
+    /** Generates order book entries from user input*/
+    std::vector<OrderBookEntry> generateEntry (const std::string &orderBookType, const std::string &currencyPair);
 
     bool runAdvisorBot;
 
     std::string currentTime;
 
     std::vector <std::string> history;
-
+    // Calls existing instance of MerkelMain orderbook
     OrderBook OB = app.getOB();
-
-
-
-
 
 };
 

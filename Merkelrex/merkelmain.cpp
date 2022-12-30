@@ -148,7 +148,7 @@ void MerkelMain::printWallet() {
 
 int MerkelMain::getUserOption() {
     std::string input;
-    std::cout << "Choose from 1 - 9: " << std::endl;
+    std::cout << "Choose from 1 - 8: " << std::endl;
     std::cin >> input;
     std::cout << "You chose: " << input << std::endl;
     std::cout << "============================" << std::endl;

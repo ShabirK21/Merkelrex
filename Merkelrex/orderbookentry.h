@@ -11,7 +11,7 @@ public:
     OrderBookEntry(double _price, double _amount, std::string _timestamp,
                    std::string _product, OrderBookType _orderType, std::string username = "dataset");
 
-    static OrderBookType stringToOBT(std::string s);
+    static OrderBookType stringToOBT(const std::string &s);
 
     static bool compareByTimestamp(OrderBookEntry &e1, OrderBookEntry &e2) {
         return e1.timestamp < e2.timestamp;

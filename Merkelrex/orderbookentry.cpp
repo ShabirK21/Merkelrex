@@ -6,7 +6,7 @@ OrderBookEntry::OrderBookEntry(double _price, double _amount,
         : price(_price), amount(_amount), timestamp(_timestamp), product(_product),
           orderType(_orderType), username(_username) {}
 
-OrderBookType OrderBookEntry::stringToOBT(std::string s) {
+OrderBookType OrderBookEntry::stringToOBT(const std::string &s) {
     if (s == "bid") {
         return OrderBookType::bid;
     } else if (s == "ask") {

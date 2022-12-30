@@ -4,7 +4,7 @@
 
 csvReader::csvReader() {}
 
-std::vector <OrderBookEntry> csvReader::readCSV(std::string csvFilename) {
+std::vector <OrderBookEntry> csvReader::readCSV(const std::string &csvFilename) {
     std::vector <OrderBookEntry> entries;
 
     std::ifstream csvFile{csvFilename};
@@ -14,10 +14,10 @@ std::vector <OrderBookEntry> csvReader::readCSV(std::string csvFilename) {
         while (std::getline(csvFile, line)) {
             try {
                 OrderBookEntry OBE = stringsToOBE(tokenize(line, ','));
-                entries.push_back(OBE);
+                entries.emplace_back(OBE);
             }
             catch (const std::exception &e) {
-                //std::cout << "Error Reading" << std::endl;
+                std::cout << "Error Reading" << std::endl;
                 continue;
             }
         }
@@ -29,7 +29,7 @@ std::vector <OrderBookEntry> csvReader::readCSV(std::string csvFilename) {
     return entries;
 };
 
-std::vector <std::string> csvReader::tokenize(std::string csvLine,
+std::vector <std::string> csvReader::tokenize(const std::string &csvLine,
                                               char separator) {
     std::vector <std::string> tokens;
     signed int start, end;
@@ -57,7 +57,7 @@ std::vector <std::string> csvReader::tokenize(std::string csvLine,
     return tokens;
 };
 
-OrderBookEntry csvReader::stringsToOBE(std::vector <std::string> tokens) {
+OrderBookEntry csvReader::stringsToOBE(const std::vector <std::string> &tokens) {
     double price, amount;
     if (tokens.size() != 5) {
         // std::cout << "Bad Line: " << std::endl;
@@ -91,10 +91,7 @@ OrderBookEntry csvReader::stringsToOBE(std::string priceString,
     catch (const std::exception &e) {
         std::cout << "csvReader::stringsToOBE - Bad Line: " << priceString << std::endl;
         std::cout << "csvReader::stringsToOBE - Bad Line: " << amountString << std::endl;
-        throw;
     }
     OrderBookEntry OBE{price, amount, timestamp, product, orderType};
     return OBE;
-
-
 };
