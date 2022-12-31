@@ -71,25 +71,33 @@ double AdvisorBot::EMA(const std::string &MaxOrMin,
   double result = 0.0;
   double multiplier = 2.0 / (period + 1.0);
   double EMA = 0.0;
+  std::vector<std::vector<OrderBookEntry>> entryVector;
+
+  for (int i = 0; i < period; i++) {
+    entryVector.emplace_back(OB.getOrders(OBT, currencyPair, time));
+    time = OB.getNextTime(time);
+  }
 
   if (MaxOrMin == "max") {
-    double initialMax = entries[0].price;
-    for (int i = 0; i < period; i++) {
-      if (entries[i].price > initialMax) {
-        initialMax = entries[i].price;
+    for (int i = 0; i < period; ++i) {
+      double initialMax = entryVector[i][0].price;
+      for (int j = 0; j < entryVector[i].size(); ++j) {
+        if (entryVector[i][j].price > initialMax) {
+          initialMax = entryVector[i][j].price;
+        }
       }
       result += initialMax;
-      time = OB.getNextTime(time);
     }
   }
   if (MaxOrMin == "min") {
-    double initialMin = entries[0].price;
-    for (int i = 0; i < period; i++) {
-      if (entries[i].price < initialMin) {
-        initialMin = entries[i].price;
+    for (int i = 0; i < period; ++i) {
+      double initialMin = entryVector[i][0].price;
+      for (int j = 0; j < entryVector[i].size(); ++j) {
+        if (entryVector[i][j].price > initialMin) {
+          initialMin = entryVector[i][j].price;
+        }
       }
       result += initialMin;
-      time = OB.getNextTime(time);
     }
   }
 
@@ -138,9 +146,6 @@ void AdvisorBot::processUserInput(const std::vector<std::string> &userInput) {
     // back to main menu
     else if (command == "main") {
       runAdvisorBot = false;
-    } else if (command == "ema") {
-      double emaVal = EMA("max", "BTC/USDT", "ask");
-      AdvisorBotFormatting(std::to_string(emaVal));
     }
     // prints the user commands, and it's output
     else if (command == "history") {
