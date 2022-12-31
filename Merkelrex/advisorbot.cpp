@@ -2,6 +2,7 @@
 #include <vector>
 #include <algorithm>
 #include <fstream>
+#include <string>
 
 #include "advisorbot.h"
 #include "csvreader.h"
@@ -58,19 +59,19 @@ double AdvisorBot::EMA(const std::string &MaxOrMin, const std::vector<OrderBookE
     double closingPrice;
     double previousEMA;
     double constant = 2.0 / (period + 1.0);
-    double SMA;
+    double sma = 0;
     double finalEMA;
     std::vector<double> EMA_list;
 
     for(int i=0; i<period; i++){
-        SMA += entries[i].price;
+        sma += entries[i].price;
     }
-    SMA /= period;
+    sma /= period;
 
     for(int i=0; i<period; i++){
         closingPrice = entries[i].price;
         if(i==0){
-            previousEMA = SMA;
+            previousEMA = sma;
         }
         finalEMA = (closingPrice - previousEMA) * constant + previousEMA;
         EMA_list.push_back(finalEMA);
@@ -190,9 +191,7 @@ void AdvisorBot::processUserInput(const std::vector <std::string> &userInput) {
         std::string orderBookType = userInput[2];
 
         // convert product to uppercase
-        for (int i = 0; i < currencyPair.length(); i++) {
-            currencyPair[i] = toupper(currencyPair[i]);
-        }
+			std::transform(currencyPair.begin(), currencyPair.end(),currencyPair.begin(), ::toupper);
 
         // minimum
         if (command == "min") {
@@ -240,9 +239,8 @@ void AdvisorBot::processUserInput(const std::vector <std::string> &userInput) {
             std::string orderBookType = userInput[2];
             std::string timestamps = userInput[3];
             // convert product to uppercase
-            for (int i = 0; i < currencyPair.length(); i++) {
-                currencyPair[i] = toupper(currencyPair[i]);
-            }
+			std::transform(currencyPair.begin(), currencyPair.end(),currencyPair.begin(), ::toupper);
+
             if (checkIfValid(currencyPair, orderBookType)) {
                 if (checkIfInt(timestamps)) {
                     history.push_back("avg " + currencyPair + " " + orderBookType + " " + timestamps);
@@ -259,10 +257,9 @@ void AdvisorBot::processUserInput(const std::vector <std::string> &userInput) {
             std::string MaxOrMin = userInput[1];
             std::string currencyPair = userInput[2];
             std::string orderBookType = userInput[3];
-            // convert prodcut to uppercase
-            for (int i = 0; i < currencyPair.length(); i++) {
-                currencyPair[i] = toupper(currencyPair[i]);
-            }
+            // convert product to uppercase
+			std::transform(currencyPair.begin(), currencyPair.end(),currencyPair.begin(), ::toupper);
+
             if (MaxOrMin == "max" || MaxOrMin == "min") {
                 if (checkIfValid(currencyPair, orderBookType)) {
                     history.push_back(command + " " + MaxOrMin + " " + currencyPair + " " + orderBookType);

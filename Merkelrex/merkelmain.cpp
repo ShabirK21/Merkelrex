@@ -1,7 +1,11 @@
 #include <iostream>
 #include <limits>
+#include <string>
 
 #include "merkelmain.h"
+
+#include <algorithm>
+
 #include "csvreader.h"
 #include "orderbookentry.h"
 #include "advisorbot.h"
@@ -88,6 +92,8 @@ void MerkelMain::enterAsk() {
         std::cout << "MerkelMain::enterAsk Invalid input" << std::endl;
     } else {
         try {
+            // convert product to uppercase
+			std::transform(tokens[0].begin(), tokens[0].end(),tokens[0].begin(), ::toupper);
             OrderBookEntry OBE = csvReader::stringsToOBE(tokens[1], tokens[2], currentTime, tokens[0],
                                                          OrderBookType::ask);
 
@@ -121,6 +127,8 @@ void MerkelMain::enterBid() {
         std::cout << "MerkelMain::enterBid Invalid input: " << input << std::endl;
     } else {
         try {
+            // convert product to uppercase
+			std::transform(tokens[0].begin(), tokens[0].end(),tokens[0].begin(), ::toupper);
             OrderBookEntry OBE = csvReader::stringsToOBE(tokens[1], tokens[2], currentTime, tokens[0],
                                                          OrderBookType::bid);
 
