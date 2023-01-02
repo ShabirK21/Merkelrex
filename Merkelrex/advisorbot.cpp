@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -66,19 +67,25 @@ double AdvisorBot::EMA(const std::string &MaxOrMin,
 
   std::string time = currentTime;
   OrderBookType OBT = OrderBookEntry::stringToOBT(orderBookType);
-  std::vector<OrderBookEntry> entries = OB.getOrders(OBT, currencyPair, time);
   int period = 10;
   double result = 0.0;
   double multiplier = 2.0 / (period + 1.0);
   double EMA = 0.0;
+  double currentPrice = 0.0;
   std::vector<std::vector<OrderBookEntry>> entryVector;
 
-  for (int i = 0; i < period; i++) {
+  for (int i = 0; i <= period; i++) {
     entryVector.emplace_back(OB.getOrders(OBT, currencyPair, time));
     time = OB.getNextTime(time);
   }
 
   if (MaxOrMin == "max") {
+    for (int k = 0; k < entryVector[10].size(); ++k) {
+      currentPrice = entryVector[10][0].price;
+      if (entryVector[10][k].price > currentPrice) {
+        currentPrice = entryVector[10][k].price;
+      }
+    }
     for (int i = 0; i < period; ++i) {
       double initialMax = entryVector[i][0].price;
       for (int j = 0; j < entryVector[i].size(); ++j) {
@@ -90,11 +97,18 @@ double AdvisorBot::EMA(const std::string &MaxOrMin,
     }
   }
   if (MaxOrMin == "min") {
+    for (int k = 0; k < entryVector[10].size(); ++k) {
+      currentPrice = entryVector[10][0].price;
+      if (entryVector[10][k].price < currentPrice) {
+        currentPrice = entryVector[10][k].price;
+      }
+    }
     for (int i = 0; i < period; ++i) {
       double initialMin = entryVector[i][0].price;
       for (int j = 0; j < entryVector[i].size(); ++j) {
         if (entryVector[i][j].price > initialMin) {
           initialMin = entryVector[i][j].price;
+          currentPrice = entryVector[10][j].price;
         }
       }
       result += initialMin;
@@ -102,7 +116,7 @@ double AdvisorBot::EMA(const std::string &MaxOrMin,
   }
 
   result /= period;
-  EMA = (entries[10].price - result) * multiplier + result;
+  EMA = (currentPrice - result) * multiplier + result;
   return EMA;
 }
 
@@ -116,6 +130,52 @@ bool AdvisorBot::checkIfInt(const std::string &input) {
   return false;
 }
 
+double AdvisorBot::stdDev(std::vector<OrderBookEntry> orders) {
+  double mean = 0;
+  double sum = 0;
+  double stdDev = 0;
+
+  for (OrderBookEntry &e : orders) {
+    sum += e.price;
+  }
+
+  mean = sum / orders.size();
+
+  for (OrderBookEntry &e : orders) {
+    stdDev += pow(e.price - mean, 2);
+  }
+
+  stdDev = sqrt(stdDev / orders.size());
+
+  return stdDev;
+}
+
+double AdvisorBot::average(const std::string &orderBookType,
+                           const std::string &currencyPair, int timestamps) {
+  std::vector<std::vector<OrderBookEntry>> entryVector;
+  OrderBookType OBT = OrderBookEntry::stringToOBT(orderBookType);
+  std::string time = currentTime;
+  double result = 0.0;
+
+  for (int i = 0; i < timestamps; ++i) {
+    entryVector.emplace_back(OB.getOrders(OBT, currencyPair, time));
+    time = OB.getNextTime(time);
+  }
+
+  for (int i = 0; i < timestamps; i++) {
+    double sum = 0.0;
+    double avg = 0.0;
+    for (int j = 0; j < entryVector[i].size(); j++) {
+      sum += entryVector[i][j].price;
+      avg = sum / entryVector[i].size();
+    }
+    result += avg;
+  }
+
+  result /= timestamps;
+  return result;
+}
+
 void AdvisorBot::processUserInput(const std::vector<std::string> &userInput) {
   std::string output;
   if (userInput.size() == 1) {
@@ -124,7 +184,7 @@ void AdvisorBot::processUserInput(const std::vector<std::string> &userInput) {
     if (command == "help") {
       AdvisorBotFormatting(
           "commands available: help <cmd>, avg, prod, min, max, std, predict, "
-          "time, step, history, save history, main");
+          "time, step, history, save history, main, clear");
     }
     // output available products
     else if (command == "prod") {
@@ -142,6 +202,8 @@ void AdvisorBot::processUserInput(const std::vector<std::string> &userInput) {
     else if (command == "step") {
       currentTime = OB.getNextTime(currentTime);
       AdvisorBotFormatting("now at " + currentTime);
+    } else if (command == "clear") {
+      system("clear");
     }
     // back to main menu
     else if (command == "main") {
@@ -195,7 +257,10 @@ void AdvisorBot::processUserInput(const std::vector<std::string> &userInput) {
                            "and their output to a file");
     } else if (help && command == "main") {
       AdvisorBotFormatting("returns to the main menu");
-    } // writes the user commands, and it's output to a file
+    } else if (help && command == "clear") {
+      AdvisorBotFormatting("clears the screen");
+    }
+    // writes the user commands, and it's output to a file
     else if (userInput[0] == "save" && command == "history") {
       std::ofstream file;
       file.open("data/history.txt");
@@ -247,7 +312,7 @@ void AdvisorBot::processUserInput(const std::vector<std::string> &userInput) {
         history.push_back("std " + currencyPair + " " + orderBookType);
         std::vector<OrderBookEntry> entries =
             generateEntry(currencyPair, orderBookType);
-        double std = OrderBook::getStdDev(entries);
+        double std = stdDev(entries);
         output = "The " + command + " " + orderBookType + " for " +
                  currencyPair + " is " + std::to_string(std);
         AdvisorBotFormatting(output);
@@ -273,10 +338,8 @@ void AdvisorBot::processUserInput(const std::vector<std::string> &userInput) {
         if (checkIfInt(timestamps)) {
           history.push_back("avg " + currencyPair + " " + orderBookType + " " +
                             timestamps);
-          std::vector<OrderBookEntry> entries =
-              generateEntry(currencyPair, orderBookType);
           double averageVal =
-              OrderBook::getAverage(entries, std::stoi(timestamps));
+              average(orderBookType, currencyPair, std::stoi(timestamps));
           output = "The " + command + " " + orderBookType + " for " +
                    currencyPair + " over the last " + timestamps +
                    " timestamps is " + std::to_string(averageVal);

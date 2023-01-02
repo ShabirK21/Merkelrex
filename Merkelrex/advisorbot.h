@@ -34,6 +34,11 @@ private:
   std::vector<OrderBookEntry> generateEntry(const std::string &orderBookType,
                                             const std::string &currencyPair);
 
+  double average(const std::string &orderBookType,
+                 const std::string &currencyPair, int timestamps);
+
+  double stdDev(std::vector<OrderBookEntry> orders);
+
   bool runAdvisorBot;
 
   std::string currentTime;

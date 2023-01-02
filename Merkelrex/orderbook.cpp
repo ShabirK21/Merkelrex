@@ -1,7 +1,6 @@
 #include "orderbook.h"
 #include "csvreader.h"
 #include <algorithm>
-#include <cmath>
 #include <map>
 
 OrderBook::OrderBook(std::string filename) {
@@ -55,38 +54,6 @@ double OrderBook::getLowPrice(std::vector<OrderBookEntry> &orders) {
       min = e.price;
   }
   return min;
-}
-
-double OrderBook::getStdDev(std::vector<OrderBookEntry> &orders) {
-  double mean = 0;
-  double sum = 0;
-  double stdDev = 0;
-
-  for (OrderBookEntry &e : orders) {
-    sum += e.price;
-  }
-
-  mean = sum / orders.size();
-
-  for (OrderBookEntry &e : orders) {
-    stdDev += pow(e.price - mean, 2);
-  }
-
-  stdDev = sqrt(stdDev / orders.size());
-
-  return stdDev;
-}
-
-double OrderBook::getAverage(std::vector<OrderBookEntry> &orders,
-                             int timestamps) {
-  double avg = 0;
-
-  for (int i = 0; i < timestamps; i++) {
-    avg += orders[i].price;
-  }
-
-  avg /= timestamps;
-  return avg;
 }
 
 std::string OrderBook::getEarliestTime() { return orders[0].timestamp; }
