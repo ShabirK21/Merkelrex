@@ -6,44 +6,40 @@
 
 class MerkelMain {
 public:
-    MerkelMain();
+  MerkelMain();
 
-    /** Call this to start the sim */
-    void init();
+  /** Call this to start the sim */
+  void init();
 
-    OrderBook getOB();
+  OrderBook getOB();
 
-    static MerkelMain appInst;
+  static MerkelMain appInst;
 
 private:
-    void printMenu();
+  void printMenu();
 
-    void printHelp();
+  void printHelp();
 
-    void printMarketStats();
+  void printMarketStats();
 
-    void enterAsk();
+  void enterAsk();
 
-    void enterBid();
+  void enterBid();
 
-    void printWallet();
+  void printWallet();
 
-    int getUserOption();
+  int getUserOption();
 
-    void getNextTimeFrame();
+  void getNextTimeFrame();
 
-    void writeToCSV();
+  void processUserOption(int userOption);
 
-    void processUserOption(int userOption);
+  std::string currentTime;
 
-    std::string currentTime;
+  Wallet wallet;
 
-    Wallet wallet;
-
-    OrderBook orderBook{"data/20200601.csv"};
-
+  OrderBook orderBook{"data/20200601.csv"};
 };
 
 // Declare global instance of MerkelMain app
 extern MerkelMain app;
-

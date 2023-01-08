@@ -162,13 +162,13 @@ double AdvisorBot::average(const std::string &orderBookType,
     time = OB.getNextTime(time);
   }
 
-  for (int i = 0; i < timestamps; i++) {
+  for (int i = 0; i < timestamps; ++i) {
     double sum = 0.0;
     double avg = 0.0;
     for (int j = 0; j < entryVector[i].size(); j++) {
       sum += entryVector[i][j].price;
-      avg = sum / entryVector[i].size();
     }
+    avg = sum / entryVector[i].size();
     result += avg;
   }
 
